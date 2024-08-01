@@ -39,6 +39,7 @@ J(\mathbf{w},b) = \frac{1}{2m} \sum\limits_{i = 0}^{m-1} (f_{\mathbf{w},b}(\math
 $$
 
 where:
+
 $$
 f_{\mathbf{w},b}(\mathbf{x}^{(i)}) = \mathbf{w} \cdot \mathbf{x}^{(i)} + b 
 $$
@@ -216,7 +217,7 @@ ax1.set_ylabel('Cost')             ;  ax2.set_ylabel('Cost')
 ax1.set_xlabel('iteration step')   ;  ax2.set_xlabel('iteration step') 
 plt.show()
 ```
-![alt text](a70252a6-322a-47ea-8d4f-29a72c0f4f71.png)
+![pltexample](https://cdn.jsdelivr.net/gh/kiu795/pic@main/img/a70252a6-322a-47ea-8d4f-29a72c0f4f71.png)
 
 *we could tell that the chart at this moment are not quite satisfactory cause we did not implement feature scaling and try to find a better learning rate-alpha, the coming steps show how to implement those steps to make our model better.*
 
