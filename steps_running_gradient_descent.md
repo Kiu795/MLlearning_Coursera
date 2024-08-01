@@ -25,7 +25,7 @@ plt.show()
 ```
 _useful image in project for example_
 <figure>
-    <img src="![](https://cdn.jsdelivr.net/gh/kiu795/pic@main/img/exerciseL03_output.png)" style="width:1200px;" >
+    <img src="https://cdn.jsdelivr.net/gh/kiu795/pic@main/img/exerciseL03_output.png" style="width:1200px;" >
 </figure>
 
 ## 3. Define functions for computing cost and gradient with multiple variables 
