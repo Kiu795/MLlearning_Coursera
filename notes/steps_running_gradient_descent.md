@@ -1,0 +1,226 @@
+#  **Steps of training linear/ regression model with multiple features using gradient descent** 
+## 0. Preparations
++ import several necessary functions from **uitls.py*
+    + `load_*_data()`  _*need to be writen specificly_
+
+
+## 1. Load dataset
+```python
+#load the dataset
+X_train, y_train = load_house_data()
+X_features = ['size(sqft)', 'bedrooms', 'floors', 'age']
+```
+
+## 2. Plot scatters by each features
+*the purpose of this step is to see which of the features has the strongest influence on price*
+
+```python
+#plot
+fig, ax = plt.subplots(1, 4, figsize=(15, 3), sharey=True)
+for i in range(len(ax)):
+    ax[i].scatter(X_train[:,i],y_train)#get each row's _i_th colum 
+    ax[i].set_xlabel(X_features[i])
+ax[0].set_ylabel("Price(1000's)")
+plt.show()
+```
+_useful image in project for example_
+
+![](https://cdn.jsdelivr.net/gh/kiu795/pic@main/img/exerciseL03_output.png)
+
+
+## 3. Define functions for computing cost and gradient with multiple variables 
+*Although we have already imported related functions from previous doc, some of the important functions will still be writen down here*
+
+### a. Cost-computing function 
+The equation for the cost function with multiple variables $J(\mathbf{w},b)$ is:
+
+$$
+J(\mathbf{w},b) = \frac{1}{2m} \sum\limits_{i = 0}^{m-1} (f_{\mathbf{w},b}(\mathbf{x}^{(i)}) - y^{(i)})^2 
+$$
+
+where:
+$$
+f_{\mathbf{w},b}(\mathbf{x}^{(i)}) = \mathbf{w} \cdot \mathbf{x}^{(i)} + b
+$$
+
+```python
+def compute_cost(X, y, w, b): 
+    """
+    compute cost
+    Args:
+      X (ndarray (m,n)): Data, m examples with n features
+      y (ndarray (m,)) : target values
+      w (ndarray (n,)) : model parameters  
+      b (scalar)       : model parameter
+      
+    Returns:
+      cost (scalar): cost
+    """
+    m = X.shape[0]
+    cost = 0.0
+    for i in range(m):                                
+        f_wb_i = np.dot(X[i], w) + b           #(n,)(n,) = scalar (see np.dot)
+        cost = cost + (f_wb_i - y[i])**2       #scalar
+    cost = cost / (2 * m)                      #scalar    
+    return cost
+```
+
+### b. Gradient-computing function
+
+$$
+\begin{align}
+\frac{\partial J(\mathbf{w},b)}{\partial w_j}  &= \frac{1}{m} \sum\limits_{i = 0}^{m-1} (f_{\mathbf{w},b}(\mathbf{x}^{(i)}) - y^{(i)})x_{j}^{(i)} \newline
+\frac{\partial J(\mathbf{w},b)}{\partial b}  &= \frac{1}{m} \sum\limits_{i = 0}^{m-1} (f_{\mathbf{w},b}(\mathbf{x}^{(i)}) - y^{(i)})
+\end{align}
+$$
+
+* m is the number of training examples in the data set
+
+* $f_{\mathbf{w},b}(\mathbf{x}^{(i)})$ is the model's prediction, while $y^{(i)}$ is the target value
+```python
+def compute_gradient(X, y, w, b):
+    """
+    Computes the gradient for linear regression 
+    Args:
+      X (ndarray (m,n)): Data, m examples with n features
+      y (ndarray (m,)) : target values
+      w (ndarray (n,)) : model parameters  
+      b (scalar)       : model parameter
+      
+    Returns:
+      dj_dw (ndarray (n,)): The gradient of the cost w.r.t. the parameters w. 
+      dj_db (scalar):       The gradient of the cost w.r.t. the parameter b. 
+    m, n = X.shape
+    dj_dw = np.zeros((n,))
+    dj_db = 0.
+    """
+    for i in range(m):
+        err = (np.dot(X[i], w) + b) - y[i]
+        for j in range(n):
+            dj_dw[j] = dj_dw[j] + err * X[i]
+        dj_db = dj_db + err
+    dj_dw = dj_dw / m
+    dj_db = dj_db / m
+
+    return dj_dw, dj_db # *note the sequence of dj_dw and dj_db
+```
+
+## 4. Combine the functions above and implement gradient descent
+equations for final steps of computing w&b
+
+$$
+\begin{align*} \text{repeat}&\text{ until convergence:} \; \lbrace \newline\;
+& w_j = w_j -  \alpha \frac{\partial J(\mathbf{w},b)}{\partial w_j}  \; & \text{for j = 0..n-1}\newline
+&b\ \ = b -  \alpha \frac{\partial J(\mathbf{w},b)}{\partial b}  \newline \rbrace
+\end{align*}
+$$
+
+where, n is the number of features, parameters $w_j$,  $b$, are updated simultaneously
+
+***参照lab_utils_multi.py***
+
+```python
+def gradient_descent(X, y, w_in, b_in, cost_function, gradient_function, alpha, num_iters): 
+    """
+    Performs batch gradient descent to learn w and b. Updates w and b by taking 
+    num_iters gradient steps with learning rate alpha
+    
+    Args:
+      X (ndarray (m,n))   : Data, m examples with n features
+      y (ndarray (m,))    : target values
+      w_in (ndarray (n,)) : initial model parameters  
+      b_in (scalar)       : initial model parameter
+      cost_function       : function to compute cost
+      gradient_function   : function to compute the gradient
+      alpha (float)       : Learning rate
+      num_iters (int)     : number of iterations to run gradient descent
+      
+    Returns:
+      w (ndarray (n,)) : Updated values of parameters 
+      b (scalar)       : Updated value  of parameter 
+      """
+    # An array to store cost J and w's at each iteration primarily for graphing later
+    J_history = []
+    J_history["cost"] = []
+    J_history["parameters"] = []
+    J_history["gradients"] = []
+    J_history["iterations"] = []
+    w = copy.deepcopy(w_in)  #avoid modifying global w within function
+    b = b_in
+    save_interval = np.ceil(num_iters / 10000)
+    
+    print(f"Iteration Cost          w0       w1       w2       w3       b       djdw0    djdw1    djdw2    djdw3    djdb  ")
+    print(f"---------------------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|")
+
+    for i in range(num_iters):
+
+        # Calculate the gradient and update the parameters
+        dj_dw,dj_db = gradient_function(X, y, w, b)
+
+        # Update Parameters using w, b, alpha and gradient
+        w = w - alpha * dj_dw
+        b = b - alpha * dj_db
+      
+        # Save cost J at each iteration
+        if i == 0 or i % save_iterval == 0:      # prevent resource exhaustion 
+            J_history["cost"].append( cost_function(X, y, w, b))
+            J_history["parameters"].append([w,b])
+            J_history["gradients"].append([dj_dw, dj_db])
+            J_history["iterations"].append(i)
+
+        # Print cost every at intervals 10 times or as many iterations if < 10
+        if i % math.ceil(num_iters / 10) == 0: #ceil:向上取整，这里的意思是每到总数的十分之一次迭代就进行一次输出
+            print(f"Iteration {i:9d}: Cost {J_history["cost"][-1]:8.2f} 
+                  ")
+        
+    return w, b, J_history #return final w,b and J history for graphing
+```
+test the implementation.
+```python
+#initialize parameters
+initial_w = np.zeros_like(w_init) #normally can wirte as ...w = np.zeros(X.shape[1])
+initial_b = 0.
+#some gradient descent settings
+iterations = 1000 #control the iteration times
+alpha = 5.0e-7 #learning rate
+#run gradient descent algorithm
+w_final, b_final, J_hist = gradient_descent(X_train, y_train, initial_w, initial_b,
+                                            compute_cost, compute_gradient,
+                                            alpha, iterations)
+print(f"w, b found by gradient descent: {w_final}, {b_final:0.2f}")
+m,_ = X_train.shape
+for i in range(m):
+    print(f"prediction: {np.dot(X_train[i], w_final) + b_final:0.2f}, target value: {y_train[i]}")
+```
+**Expected output example**:
+```
+Iteration    0: Cost  2529.46   
+Iteration  100: Cost   695.99   
+Iteration  200: Cost   694.92   
+Iteration  300: Cost   693.86   
+Iteration  400: Cost   692.81   
+Iteration  500: Cost   691.77   
+Iteration  600: Cost   690.73   
+Iteration  700: Cost   689.71   
+Iteration  800: Cost   688.70   
+Iteration  900: Cost   687.69   
+b,w found by gradient descent: -0.00,[ 0.2   0.   -0.01 -0.07]
+prediction0: 426.19, target value: 460
+prediction1: 286.17, target value: 232
+prediction2: 171.47, target value: 178
+```
+## 5. Plotting
+```python
+# plot cost versus iteration  
+fig, (ax1, ax2) = plt.subplots(1, 2, constrained_layout=True, figsize=(12, 4))#1行2列排布;constrained_layout是防止生成的图像交叠
+ax1.plot(J_hist)
+ax2.plot(100 + np.arange(len(J_hist[100:])), J_hist[100:])
+ax1.set_title("Cost vs. iteration");  ax2.set_title("Cost vs. iteration (tail)")
+ax1.set_ylabel('Cost')             ;  ax2.set_ylabel('Cost') 
+ax1.set_xlabel('iteration step')   ;  ax2.set_xlabel('iteration step') 
+plt.show()
+```
+![](https://cdn.jsdelivr.net/gh/kiu795/pic@main/img/a70252a6-322a-47ea-8d4f-29a72c0f4f71.png)
+
+*we could tell that the chart at this moment are not quite satisfactory cause we did not implement feature scaling and try to find a better learning rate-alpha, the coming steps show how to implement those steps to make our model better.*
+
